@@ -99,4 +99,8 @@ body {
 .labels {
   display: flex;
   flex-direction: column;
+}
+
+.amtInput {
+  width: 100%;
 }/*# sourceMappingURL=index.css.map */
