@@ -1,13 +1,102 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+* {
+  /* border: 1px red solid; */
+  box-sizing: border-box;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+header {
+  border-bottom: 1px black solid;
+  width: 100%;
+  height: 50px;
 }
+
+body {
+  padding: 0px;
+  margin: 0px;
+}
+
+#container {
+  display: flex;
+  flex-direction: row;
+}
+
+#members {
+  border: 1px black solid;
+  border-radius: 5px;
+  margin: 10px;
+  padding: 10px;
+  width: 25vw;
+  height: 90vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(5, 30px);
+}
+#members #header {
+  grid-column: 1/3;
+  font-weight: 800;
+}
+#members #add {
+  grid-column: 1/3;
+}
+
+#ledger {
+  border: 1px solid black;
+  border-radius: 5px;
+  width: 75vw;
+  height: 90vh;
+  margin: 10px;
+  padding: 10px;
+}
+#ledger #ledgerHeader {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(5, 1fr);
+  justify-content: space-between;
+}
+
+#names {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid black;
+  width: 60%;
+}
+
+#ledgerHeader {
+  font-weight: 800;
+}
+
+.ledgerSection {
+  width: 100%;
+  height: -moz-max-content;
+  height: max-content;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+}
+
+.sectionHeader {
+  font-weight: 800;
+}
+
+.sectionTable {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(5, 1fr);
+  justify-content: space-between;
+  padding: 5px;
+}
+.sectionTable span {
+  border-top: 1px black solid;
+}
+
+.amounts {
+  display: flex;
+  flex-direction: column;
+}
+
+.totals {
+  font-weight: 800;
+}
+
+.labels {
+  display: flex;
+  flex-direction: column;
+}/*# sourceMappingURL=index.css.map */
