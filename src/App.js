@@ -94,10 +94,11 @@ function Ledger(){
   
   const splitCost =(e)=>{
     const split = e.target.value/3;
+    console.log(e.target.id);
     let valuesCopy = structuredClone(values);
-    valuesCopy["recurringCosts"]["water/sewer"]["total"] = round(e.target.value);
+    valuesCopy["recurringCosts"][e.target.id]["total"] = round(e.target.value);
     for(let x = 0; x < members.length; x++){
-      valuesCopy["recurringCosts"]["water/sewer"][members[x]] = round(split);
+      valuesCopy["recurringCosts"][e.target.id][members[x]] = round(split);
     };
     
     updateTotals(e, valuesCopy)
@@ -160,23 +161,23 @@ function Ledger(){
         <span className="sectionHeader">Recurring Costs</span>
         <div className="sectionTable">
           <span>water/sewer</span>
-          <input onChange={splitCost} className="amtInput" type="text" />
+          <input onChange={splitCost} id="water/sewer" type="text" placeholder="0.00"/>
           <input type="date" />
           <span className="amount line1 Brad">{values["recurringCosts"]["water/sewer"]["Brad"]}</span>
           <span className="amount line1 Carson">{values["recurringCosts"]["water/sewer"]["Carson"]}</span>
           <span className="amount line1 Sean">{values["recurringCosts"]["water/sewer"]["Sean"]}</span>
           <span>electric</span>
-          <span>$00.00</span>
+          <input onChange={splitCost} id="electric" type="text" placeholder="0.00"/>
           <span>8/20/2024</span>
-          <span className="amount line2 Brad">$00.00</span>
-          <span className="amount line2 Carson">$00.00</span>
-          <span className="amount line2 Sean">$00.00</span>
+          <span className="amount line2 Brad">{values["recurringCosts"]["electric"]["Brad"]}</span>
+          <span className="amount line2 Carson">{values["recurringCosts"]["electric"]["Carson"]}</span>
+          <span className="amount line2 Sean">{values["recurringCosts"]["electric"]["Sean"]}</span>
           <span>natural gas</span>
-          <span>$00.00</span>
+          <input onChange={splitCost} id="natural gas" type="text" placeholder="0.00"/>
           <span>8/20/2024</span>
-          <span className="amount line3 Brad">$00.00</span>
-          <span className="amount line3 Carson">$00.00</span>
-          <span className="amount line3 Sean">$00.00</span>
+          <span className="amount line3 Brad">{values["recurringCosts"]["natural gas"]["Brad"]}</span>
+          <span className="amount line3 Carson">{values["recurringCosts"]["natural gas"]["Carson"]}</span>
+          <span className="amount line3 Sean">{values["recurringCosts"]["natural gas"]["Sean"]}</span>
           <span className="totals">Total</span>
           <span className="amount totals">{values["recurringCosts"]["totals"]["overall"]}</span>
           <span></span>
