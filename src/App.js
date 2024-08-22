@@ -18,26 +18,48 @@ function Members(){
 
 function Ledger(){
 
-  const [costs, setCosts] = useState({"test":5})
-  //   [
-  //   ["recurringCosts", ["water/sewer", [["brad", 0], ["Carson", 0], ["Sean", 0]]]],
-  //   ["otherCosts", []],
-  //   ["paymentsMade",[]],
-  //   ["Balances",[
-  //     ["BeginBal", ["Brad", 0], ["Carson", 0], ["Sean", 0]],
-  //     ["LESS: Payments", ["Brad", 0], ["Carson", 0], ["Sean", 0]],
-  //     ["ADD: Total Costs", ["Brad", 0], ["Carson", 0], ["Sean", 0]],
-  //     ["Current Balance", ["Brad", 0], ["Carson", 0], ["Sean", 0]]
-  //   ]]
-  // ])
-
+  const [members, setMembers] = useState(["Brad", "Carson", "Sean"]);
+  const [costs, setCosts] = useState({
+    "recurringCosts": {
+      "water/sewer": {
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      }
+    },
+    "otherCosts": {},
+    "paymentsMade": {},
+    "Balances": {
+      "BeginBal": {
+        "Brad": 0,
+        "Carson": 0,
+        "Sean": 0
+      },
+      "LESS: Payments": {
+        "Brad": 0,
+        "Carson": 0,
+        "Sean": 0
+      },
+      "ADD: Total Costs": {
+        "Brad": 0,
+        "Carson": 0,
+        "Sean": 0
+      },
+      "Current Balance": {
+        "Brad": 0,
+        "Carson": 0,
+        "Sean": 0
+      }
+    }
+  })
+  
   const splitCost =(e)=>{
     const split = e.target.value/3;
     let costsCopy = costs;
-    for(let x = 0; x < 3; x++){
-      costsCopy[1][1][x][1] = split; 
+    for(let x = 0; x < members.length; x++){
+      costsCopy["recurringCosts"]["water/sewer"][members[x]] = split;
     };
-    console.log(costsCopy[1][1][0][1]); 
+    // console.log(costsCopy); 
     setCosts(costsCopy)
   };
 
@@ -57,12 +79,9 @@ function Ledger(){
           <span>water/sewer</span>
           <input onChange={splitCost} className="amtInput" type="text" />
           <input type="date" />
-          <span className="amount line1 Brad">{costs.test}</span>
-          <span className="amount line1 Carson"></span>
-          <span className="amount line1 Sean"></span>
-          {/* <span className="amount line1 Brad">{costs[1][1][0][1]}</span>
-          <span className="amount line1 Carson">{costs[1][1][1][1]}</span>
-          <span className="amount line1 Sean">{costs[1][1][2][1]}</span> */}
+          <span className="amount line1 Brad">{costs["recurringCosts"]["water/sewer"]["Brad"]}</span>
+          <span className="amount line1 Carson">{costs["recurringCosts"]["water/sewer"]["Carson"]}</span>
+          <span className="amount line1 Sean">{costs["recurringCosts"]["water/sewer"]["Sean"]}</span>
           <span>electric</span>
           <span>$90.00</span>
           <span>8/20/2024</span>
