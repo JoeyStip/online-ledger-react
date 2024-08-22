@@ -20,20 +20,55 @@ function Ledger(){
 
   const [members, setMembers] = useState(["Brad", "Carson", "Sean"]);
   const [costs, setCosts] = useState({
+    "recurringCosts": ["water/sewer", "electric", "natural gas"],
+    "OtherCosts": ["Netflix"]
+  })
+  const [values, setValues] = useState({
     "recurringCosts": {
+      "totals":{
+        "overall": 0,
+        "Brad": 0,
+        "Carson": 0,
+        "Sean": 0
+      },
       "water/sewer": {
+        "total": 0,
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      },
+      "electric": {
+        "total": 0,
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      },
+      "natural gas": {
+        "total": 0,
         "Brad": 0,
         "Carson" : 0,
         "Sean" : 0
       }
     },
-    "otherCosts": {},
-    "paymentsMade": {},
+    "otherCosts": {
+      "total": 0,
+      "netflix": {
+        "total": 0,
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      }
+    },
+    "paymentsMade": {
+        "Brad": 50,
+        "Carson" : 40,
+        "Sean" : 80
+    },
     "Balances": {
       "BeginBal": {
-        "Brad": 0,
-        "Carson": 0,
-        "Sean": 0
+        "Brad": 34.59,
+        "Carson": 68.13,
+        "Sean": 35.74
       },
       "LESS: Payments": {
         "Brad": 0,
@@ -52,16 +87,64 @@ function Ledger(){
       }
     }
   })
+
+  const round=(n)=>{
+    return Math.round(n*100)/100
+  }
   
   const splitCost =(e)=>{
     const split = e.target.value/3;
-    let costsCopy = costs;
+    let valuesCopy = structuredClone(values);
+    valuesCopy["recurringCosts"]["water/sewer"]["total"] = round(e.target.value);
     for(let x = 0; x < members.length; x++){
-      costsCopy["recurringCosts"]["water/sewer"][members[x]] = split;
+      valuesCopy["recurringCosts"]["water/sewer"][members[x]] = round(split);
     };
-    // console.log(costsCopy); 
-    setCosts(costsCopy)
+    
+    updateTotals(e, valuesCopy)
   };
+
+  const updateTotals =(e, valuesDeepCopy)=>{
+    // per member vertical total for recurring
+    let total = 0;
+    for(let x = 0; x < members.length; x++){
+      for(let i = 0; i < costs["recurringCosts"].length; i++){
+        total = total + valuesDeepCopy["recurringCosts"][costs["recurringCosts"][i]][members[x]]
+      }
+      valuesDeepCopy["recurringCosts"]["totals"][members[x]] = round(total);
+      total = 0;
+    }
+
+    for(let y = 0; y < costs["recurringCosts"].length; y++){
+      total = total + parseInt(valuesDeepCopy["recurringCosts"][costs["recurringCosts"][y]]["total"])
+    }
+    if(total>0){
+      valuesDeepCopy["recurringCosts"]["totals"]["overall"] = round(total);
+    } else {
+      valuesDeepCopy["recurringCosts"]["totals"]["overall"] = 0.00;
+    }
+    
+      
+    updateBalances(e, valuesDeepCopy)
+  }
+
+  const updateBalances =(e, valuesDeepCopy)=>{
+    // console.log(costsCopy); 
+    // console.log(e.target.value)
+    for(let x = 0; x < members.length; x++){
+      let totalCosts = 0
+      for(let y = 0; y < costs["recurringCosts"].length; y++){
+        totalCosts = totalCosts + valuesDeepCopy["recurringCosts"][costs["recurringCosts"][y]][members[x]]
+      }
+      valuesDeepCopy["Balances"]["ADD: Total Costs"][members[x]] = round(totalCosts);
+      totalCosts = 0
+    }
+
+    setValues(valuesDeepCopy)
+  }
+
+  const addCost =()=>{
+    
+  }
 
   return (
     <div id="ledger">
@@ -79,28 +162,28 @@ function Ledger(){
           <span>water/sewer</span>
           <input onChange={splitCost} className="amtInput" type="text" />
           <input type="date" />
-          <span className="amount line1 Brad">{costs["recurringCosts"]["water/sewer"]["Brad"]}</span>
-          <span className="amount line1 Carson">{costs["recurringCosts"]["water/sewer"]["Carson"]}</span>
-          <span className="amount line1 Sean">{costs["recurringCosts"]["water/sewer"]["Sean"]}</span>
+          <span className="amount line1 Brad">{values["recurringCosts"]["water/sewer"]["Brad"]}</span>
+          <span className="amount line1 Carson">{values["recurringCosts"]["water/sewer"]["Carson"]}</span>
+          <span className="amount line1 Sean">{values["recurringCosts"]["water/sewer"]["Sean"]}</span>
           <span>electric</span>
-          <span>$90.00</span>
+          <span>$00.00</span>
           <span>8/20/2024</span>
-          <span className="amount line2 Brad">$30.00</span>
-          <span className="amount line2 Carson">$30.00</span>
-          <span className="amount line2 Sean">$30.00</span>
+          <span className="amount line2 Brad">$00.00</span>
+          <span className="amount line2 Carson">$00.00</span>
+          <span className="amount line2 Sean">$00.00</span>
           <span>natural gas</span>
-          <span>$30.00</span>
+          <span>$00.00</span>
           <span>8/20/2024</span>
-          <span className="amount line3 Brad">$10.00</span>
-          <span className="amount line3 Carson">$10.00</span>
-          <span className="amount line3 Sean">$10.00</span>
+          <span className="amount line3 Brad">$00.00</span>
+          <span className="amount line3 Carson">$00.00</span>
+          <span className="amount line3 Sean">$00.00</span>
           <span className="totals">Total</span>
-          <span className="amount totals">$180.00</span>
+          <span className="amount totals">{values["recurringCosts"]["totals"]["overall"]}</span>
           <span></span>
-          <span className="amount totals Brad">$60.00</span>
-          <span className="amount totals Carson">$60.00</span>
-          <span className="amount totals Sean">$60.00</span>
-          <button>+</button>
+          <span className="amount totals Brad">{values["recurringCosts"]["totals"]["Brad"]}</span>
+          <span className="amount totals Carson">{values["recurringCosts"]["totals"]["Carson"]}</span>
+          <span className="amount totals Sean">{values["recurringCosts"]["totals"]["Sean"]}</span>
+          <button onClick={addCost}>+</button>
         </div>
       </div>
       <div id="otherCosts" className="ledgerSection">
@@ -163,9 +246,9 @@ function Ledger(){
           <span>ADD: Total Costs</span>
           <span></span>
           <span></span>
-          <span>$120.00</span>
-          <span>$120.00</span>
-          <span>$120.00</span>
+          <span>{values["Balances"]["ADD: Total Costs"]["Brad"]}</span>
+          <span>{values["Balances"]["ADD: Total Costs"]["Carson"]}</span>
+          <span>{values["Balances"]["ADD: Total Costs"]["Sean"]}</span>
           <span>Current Balance:</span>
           <span></span>
           <span></span>
