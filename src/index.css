@@ -78,13 +78,20 @@ body {
 }
 
 .sectionTable {
-  display: grid;
-  grid-template-columns: 1.5fr repeat(5, 1fr);
-  justify-content: space-between;
   padding: 5px;
 }
 .sectionTable span {
   border-top: 1px black solid;
+}
+
+.costRow {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(5, 1fr);
+  justify-content: space-between;
+}
+
+.amtInput {
+  width: 80%;
 }
 
 .amounts {
@@ -99,8 +106,4 @@ body {
 .labels {
   display: flex;
   flex-direction: column;
-}
-
-.amtInput {
-  width: 100%;
 }/*# sourceMappingURL=index.css.map */

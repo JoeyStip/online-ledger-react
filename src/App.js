@@ -24,32 +24,36 @@ function Ledger(){
     "OtherCosts": ["Netflix"]
   })
   const [values, setValues] = useState({
-    "recurringCosts": {
-      "totals":{
-        "overall": 0,
+    "recurringCosts": [
+      {
+        "name":"water/sewer", 
+        "total": 0,
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      },
+      {
+        "name": "electric",
+        "total": 0,
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      },
+      {
+        "name": "natural gas",
+        "total": 0,
+        "Brad": 0,
+        "Carson" : 0,
+        "Sean" : 0
+      },
+      {
+        "name": "totals",
+        "total": 0,
         "Brad": 0,
         "Carson": 0,
         "Sean": 0
-      },
-      "water/sewer": {
-        "total": 0,
-        "Brad": 0,
-        "Carson" : 0,
-        "Sean" : 0
-      },
-      "electric": {
-        "total": 0,
-        "Brad": 0,
-        "Carson" : 0,
-        "Sean" : 0
-      },
-      "natural gas": {
-        "total": 0,
-        "Brad": 0,
-        "Carson" : 0,
-        "Sean" : 0
       }
-    },
+    ],
     "otherCosts": {
       "total": 0,
       "netflix": {
@@ -94,34 +98,35 @@ function Ledger(){
   
   const splitCost =(e)=>{
     const split = e.target.value/3;
-    //console.log(e.target.id);
-    let valuesCopy = structuredClone(values);
-    valuesCopy["recurringCosts"][e.target.id]["total"] = round(e.target.value);
+    let valuesDeepCopy = structuredClone(values);
+    const index = valuesDeepCopy["recurringCosts"].findIndex((x)=> x.name===e.target.id)
+    console.log(e.target.id, "index: ", index);
+    valuesDeepCopy["recurringCosts"][index]["total"] = round(e.target.value);
     for(let x = 0; x < members.length; x++){
-      valuesCopy["recurringCosts"][e.target.id][members[x]] = round(split);
+      valuesDeepCopy["recurringCosts"][index][members[x]] = round(split);
     };
-    
-    updateTotals(e, valuesCopy)
+    updateTotals(e, valuesDeepCopy)
   };
 
   const updateTotals =(e, valuesDeepCopy)=>{
+    const totalsIndex = costs["recurringCosts"].length;
     // per member vertical total for recurring
     let total = 0;
     for(let x = 0; x < members.length; x++){
       for(let i = 0; i < costs["recurringCosts"].length; i++){
-        total = total + valuesDeepCopy["recurringCosts"][costs["recurringCosts"][i]][members[x]]
+        total = total + valuesDeepCopy["recurringCosts"][i][members[x]]
       }
-      valuesDeepCopy["recurringCosts"]["totals"][members[x]] = round(total);
+      valuesDeepCopy["recurringCosts"][totalsIndex][members[x]] = round(total);
       total = 0;
     }
     //overall total
-    for(let y = 0; y < costs["recurringCosts"].length; y++){
-      total = total + valuesDeepCopy["recurringCosts"][costs["recurringCosts"][y]]["total"]
+    for(let y = 0; y < costs["recurringCosts"].length-1; y++){
+      total = total + valuesDeepCopy["recurringCosts"][y]["total"]
     }
     if(total>0){
-      valuesDeepCopy["recurringCosts"]["totals"]["overall"] = round(total);
+      valuesDeepCopy["recurringCosts"][totalsIndex]["total"] = round(total);
     } else {
-      valuesDeepCopy["recurringCosts"]["totals"]["overall"] = 0.00;
+      valuesDeepCopy["recurringCosts"][totalsIndex]["total"] = 0.00;
     }
     updateBalances(e, valuesDeepCopy)
   }
@@ -129,8 +134,8 @@ function Ledger(){
   const updateBalances =(e, valuesDeepCopy)=>{
     for(let x = 0; x < members.length; x++){
       let totalCosts = 0
-      for(let y = 0; y < costs["recurringCosts"].length; y++){
-        totalCosts = totalCosts + valuesDeepCopy["recurringCosts"][costs["recurringCosts"][y]][members[x]]
+      for(let y = 0; y < costs["recurringCosts"].length-1; y++){
+        totalCosts = totalCosts + valuesDeepCopy["recurringCosts"][y][members[x]]
       }
       valuesDeepCopy["Balances"]["ADD: Total Costs"][members[x]] = round(totalCosts);
       totalCosts = 0
@@ -138,30 +143,34 @@ function Ledger(){
     setValues(valuesDeepCopy)
   }
 
-  const [ledgerElements, setLedgerElements] = useState([
-    <span>water/sewer</span>,
-    <input onChange={splitCost} id="water/sewer" type="text" placeholder="0.00"/>,
-    <input type="date" />,
-    <span className="amount Brad">{values["recurringCosts"]["water/sewer"]["Brad"]}</span>,
-    <span className="amount Carson">{values["recurringCosts"]["water/sewer"]["Carson"]}</span>,
-    <span className="amount Sean">{values["recurringCosts"]["water/sewer"]["Sean"]}</span>,
-    <span>electric</span>,
-    <input onChange={splitCost} id="electric" type="text" placeholder="0.00"/>,
-    <input type="date" />,
-    <span className="amount Brad">{values["recurringCosts"]["electric"]["Brad"]}</span>,
-    <span className="amount Carson">{values["recurringCosts"]["electric"]["Carson"]}</span>,
-    <span className="amount Sean">{values["recurringCosts"]["electric"]["Sean"]}</span>,
-    <span>natural gas</span>,
-    <input onChange={splitCost} id="natural gas" type="text" placeholder="0.00"/>,
-    <span>8/20/2024</span>,
-    <span className="amount Brad">{values["recurringCosts"]["natural gas"]["Brad"]}</span>,
-    <span className="amount Carson">{values["recurringCosts"]["electric"]["Carson"]}</span>,
-    <span className="amount Sean">{values["recurringCosts"]["natural gas"]["Sean"]}</span>
-  ])
-
   const addCost =()=>{
-    setLedgerElements();
-  } 
+    let newCostName = "new cost";
+    let costDeepCopy = structuredClone(costs);
+    costDeepCopy["recurringCosts"].push(newCostName);
+    setCosts(costDeepCopy);
+    let newValueObj = {
+      "name": newCostName,
+      "total": 0
+    };
+    for(let x = 0; x < members.length; x++){
+      newValueObj[members[x]] = 0;
+    };
+    let valuesDeepCopy = structuredClone(values);
+    let spliceIndex = valuesDeepCopy["recurringCosts"].length-1;
+    valuesDeepCopy["recurringCosts"].splice(spliceIndex, 0, newValueObj);
+    setValues(valuesDeepCopy);
+    console.log(values);
+  }
+
+  const removeCost =()=>{
+    let costDeepCopy = structuredClone(costs);
+    let spliceIndex = costs["recurringCosts"].length-1;
+    costDeepCopy["recurringCosts"].splice(spliceIndex, 1);
+    let valuesDeepCopy = structuredClone(values);
+    spliceIndex = values["recurringCosts"].length-2;
+    valuesDeepCopy["recurringCosts"].splice(spliceIndex, 1);
+    setValues(valuesDeepCopy);
+  }
 
   return (
     <div id="ledger">
@@ -176,14 +185,22 @@ function Ledger(){
       <div id="recurringCosts" className="ledgerSection">
         <span className="sectionHeader">Recurring Costs</span>
         <div className="sectionTable">
-          {ledgerElements}
-          <span className="totals">Total</span>
-          <span id="overallRecurringTotal" className="amount totals">{values["recurringCosts"]["totals"]["overall"]}</span>
-          <span></span>
-          <span className="amount totals Brad">{values["recurringCosts"]["totals"]["Brad"]}</span>
-          <span className="amount totals Carson">{values["recurringCosts"]["totals"]["Carson"]}</span>
-          <span className="amount totals Sean">{values["recurringCosts"]["totals"]["Sean"]}</span>
+          {values["recurringCosts"].map((cost, index)=>{
+            return (
+              <div key={index} className="costRow">
+                <span>{cost.name}</span>
+                {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput" type="text" placeholder="0.00"/> : <span></span>}
+                <input type="date" />
+                {members.map((member, index)=>{
+                  return (
+                    <span key={index}>{cost[member]}</span>
+                  )
+                })}
+              </div>
+            )
+          })}
           <button onClick={addCost}>+</button>
+          <button onClick={removeCost}>-</button>
           <div></div>
         </div>
       </div>
