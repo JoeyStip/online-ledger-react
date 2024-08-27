@@ -23,7 +23,7 @@ function AddDialogue({visibilityState, setVisibilityState ,addCost}){
     setVisibilityState("hidden");
     const costName = e.target[0].value;
     const costDate = e.target[1].value;
-    console.log(costName, costDate)
+    console.log(Date.now())
     addCost(costName, costDate)
   }
 
@@ -38,7 +38,7 @@ function AddDialogue({visibilityState, setVisibilityState ,addCost}){
         </div>
         <div>
           <label htmlFor="costDate">Date:
-            <input type="date" id="costDate" />
+            <input type="date" id="costDate" placeholder={Date.now()}/>
           </label>
         </div>
         <button type="submit">Add</button>
