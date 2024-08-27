@@ -16,8 +16,40 @@ function Members(){
   );
 };
 
+function AddDialogue({visibilityState, setVisibilityState ,addCost}){
+
+  const handleSubmit=(e)=>{
+    e.preventDefault();
+    setVisibilityState("hidden");
+    const costName = e.target[0].value;
+    const costDate = e.target[1].value;
+    console.log(costName, costDate)
+    addCost(costName, costDate)
+  }
+
+  return (
+    <div id="addCostDialogue" style={{visibility: visibilityState}}>
+      <h1>Add Cost</h1>
+      <form id="inputWrapper" onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="costName">Cost Name:
+            <input type="text" id="costName" />
+          </label>
+        </div>
+        <div>
+          <label htmlFor="costDate">Date:
+            <input type="date" id="costDate" />
+          </label>
+        </div>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+  )
+}
+
 function Ledger(){
 
+  const [visibilityState, setVisibilityState] = useState("hidden");
   const [members, setMembers] = useState(["Brad", "Carson", "Sean"]);
   const [costs, setCosts] = useState({
     "recurringCosts": ["water/sewer", "electric", "natural gas"],
@@ -97,30 +129,38 @@ function Ledger(){
   }
   
   const splitCost =(e)=>{
+
     const split = e.target.value/3;
     let valuesDeepCopy = structuredClone(values);
     const index = valuesDeepCopy["recurringCosts"].findIndex((x)=> x.name===e.target.id)
-    console.log(e.target.id, "index: ", index);
+    
     valuesDeepCopy["recurringCosts"][index]["total"] = round(e.target.value);
     for(let x = 0; x < members.length; x++){
       valuesDeepCopy["recurringCosts"][index][members[x]] = round(split);
     };
-    updateTotals(e, valuesDeepCopy)
+    updateTotals(valuesDeepCopy)
   };
 
-  const updateTotals =(e, valuesDeepCopy)=>{
-    const totalsIndex = costs["recurringCosts"].length;
+  const updateTotals =(valuesDeepCopy, costDeepCopy)=>{
+    //console.log(valuesDeepCopy, costs, members);
+    let costObj = {};
+    if(costDeepCopy){
+      costObj = costDeepCopy
+    } else {
+      costObj = costs;
+    }
+    const totalsIndex = costObj["recurringCosts"].length;
     // per member vertical total for recurring
     let total = 0;
     for(let x = 0; x < members.length; x++){
-      for(let i = 0; i < costs["recurringCosts"].length; i++){
+      for(let i = 0; i < costObj["recurringCosts"].length; i++){
         total = total + valuesDeepCopy["recurringCosts"][i][members[x]]
       }
       valuesDeepCopy["recurringCosts"][totalsIndex][members[x]] = round(total);
       total = 0;
     }
     //overall total
-    for(let y = 0; y < costs["recurringCosts"].length-1; y++){
+    for(let y = 0; y < costObj["recurringCosts"].length-1; y++){
       total = total + valuesDeepCopy["recurringCosts"][y]["total"]
     }
     if(total>0){
@@ -128,13 +168,13 @@ function Ledger(){
     } else {
       valuesDeepCopy["recurringCosts"][totalsIndex]["total"] = 0.00;
     }
-    updateBalances(e, valuesDeepCopy)
+    updateBalances(valuesDeepCopy, costObj)
   }
 
-  const updateBalances =(e, valuesDeepCopy)=>{
+  const updateBalances =(valuesDeepCopy, costObj)=>{
     for(let x = 0; x < members.length; x++){
       let totalCosts = 0
-      for(let y = 0; y < costs["recurringCosts"].length-1; y++){
+      for(let y = 0; y < costObj["recurringCosts"].length-1; y++){
         totalCosts = totalCosts + valuesDeepCopy["recurringCosts"][y][members[x]]
       }
       valuesDeepCopy["Balances"]["ADD: Total Costs"][members[x]] = round(totalCosts);
@@ -143,37 +183,44 @@ function Ledger(){
     setValues(valuesDeepCopy)
   }
 
-  const addCost =()=>{
-    let newCostName = "new cost";
+  const addCost =(costName, costDate)=>{
+    let newCostName = costName;
     let costDeepCopy = structuredClone(costs);
     costDeepCopy["recurringCosts"].push(newCostName);
     setCosts(costDeepCopy);
     let newValueObj = {
       "name": newCostName,
-      "total": 0
+      "date": costDate,
+      "total": 0.00
     };
     for(let x = 0; x < members.length; x++){
-      newValueObj[members[x]] = 0;
+      newValueObj[members[x]] = 0.00;
     };
     let valuesDeepCopy = structuredClone(values);
     let spliceIndex = valuesDeepCopy["recurringCosts"].length-1;
     valuesDeepCopy["recurringCosts"].splice(spliceIndex, 0, newValueObj);
     setValues(valuesDeepCopy);
-    console.log(values);
   }
 
   const removeCost =()=>{
     let costDeepCopy = structuredClone(costs);
     let spliceIndex = costs["recurringCosts"].length-1;
     costDeepCopy["recurringCosts"].splice(spliceIndex, 1);
+    setCosts(costDeepCopy);
+    console.log(`costDeepCopy:`, costDeepCopy, `costs:`, costs);
     let valuesDeepCopy = structuredClone(values);
     spliceIndex = values["recurringCosts"].length-2;
     valuesDeepCopy["recurringCosts"].splice(spliceIndex, 1);
-    setValues(valuesDeepCopy);
+    updateTotals(valuesDeepCopy, costDeepCopy);
+  }
+
+  const showDialogue=()=>{
+    setVisibilityState("visible")
   }
 
   return (
     <div id="ledger">
+      <AddDialogue visibilityState={visibilityState} setVisibilityState={setVisibilityState} addCost={addCost}/>
       <div id="ledgerHeader" className="ledgerSection">
         <span id="MonthYear">August 2024</span>
         <span>Amount</span>
@@ -190,16 +237,16 @@ function Ledger(){
               <div key={index} className="costRow">
                 <span>{cost.name}</span>
                 {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput" type="text" placeholder="0.00"/> : <span></span>}
-                <input type="date" />
+                <span>{cost.date}</span>
                 {members.map((member, index)=>{
                   return (
-                    <span key={index}>{cost[member]}</span>
+                    <span key={index}>${cost[member]}</span>
                   )
                 })}
               </div>
             )
           })}
-          <button onClick={addCost}>+</button>
+          <button onClick={showDialogue}>+</button>
           <button onClick={removeCost}>-</button>
           <div></div>
         </div>

@@ -14,6 +14,27 @@ body {
   margin: 0px;
 }
 
+#addCostDialogue {
+  position: absolute;
+  top: 15vh;
+  left: 33vw;
+  width: 50%;
+  height: 20%;
+  border: 1px solid black;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: aliceblue;
+}
+#addCostDialogue #inputWrapper {
+  display: flex;
+  flex-direction: row;
+}
+#addCostDialogue #inputWrapper div {
+  margin: 5px;
+}
+
 #container {
   display: flex;
   flex-direction: row;
@@ -71,15 +92,13 @@ body {
   display: flex;
   flex-direction: column;
   padding: 5px;
+  margin: 0px;
 }
 
 .sectionHeader {
   font-weight: 800;
 }
 
-.sectionTable {
-  padding: 5px;
-}
 .sectionTable span {
   border-top: 1px black solid;
 }
@@ -87,11 +106,14 @@ body {
 .costRow {
   display: grid;
   grid-template-columns: 1.5fr repeat(5, 1fr);
-  justify-content: space-between;
+  gap: 2px;
+}
+.costRow span {
+  padding: 1px;
 }
 
 .amtInput {
-  width: 80%;
+  width: 100%;
 }
 
 .amounts {
