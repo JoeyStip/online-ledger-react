@@ -59,6 +59,7 @@ function Ledger(){
     "recurringCosts": [
       {
         "name":"water/sewer", 
+        "date": "01/01/2024",
         "total": 0,
         "Brad": 0,
         "Carson" : 0,
@@ -66,6 +67,7 @@ function Ledger(){
       },
       {
         "name": "electric",
+        "date": "01/01/2024",
         "total": 0,
         "Brad": 0,
         "Carson" : 0,
@@ -73,6 +75,7 @@ function Ledger(){
       },
       {
         "name": "natural gas",
+        "date": "01/01/2024",
         "total": 0,
         "Brad": 0,
         "Carson" : 0,
@@ -86,42 +89,66 @@ function Ledger(){
         "Sean": 0
       }
     ],
-    "otherCosts": {
-      "total": 0,
-      "netflix": {
+    "otherCosts":[
+      {
+        "name": "netflix",
+        "date": "01/01/2024",
         "total": 0,
         "Brad": 0,
         "Carson" : 0,
         "Sean" : 0
+      },
+      {
+        "name": "totals",
+        "total": 0,
+        "Brad": 0,
+        "Carson": 0,
+        "Sean": 0
       }
-    },
-    "paymentsMade": {
-        "Brad": 50,
-        "Carson" : 40,
-        "Sean" : 80
-    },
-    "Balances": {
-      "BeginBal": {
+    ],
+    "paymentsMade": [
+        {
+          "name": "Brad",
+          "date": "01/01/2024",
+          "amt": 0
+        },
+        {
+          "name": "Sean",
+          "date": "01/01/2024",
+          "amt": 0
+        },
+        {
+          "name": "Carson",
+          "date": "01/01/2024",
+          "amt": 0
+        }
+    ],
+    "Balances": [
+      { 
+        "name": "BeginBal", 
         "Brad": 34.59,
         "Carson": 68.13,
         "Sean": 35.74
       },
-      "LESS: Payments": {
+      {
+        "name": "LESS: Payments",
         "Brad": 0,
         "Carson": 0,
         "Sean": 0
       },
-      "ADD: Total Costs": {
+      {
+        "name": "ADD: Total Costs",
         "Brad": 0,
         "Carson": 0,
         "Sean": 0
       },
-      "Current Balance": {
+      {
+        "name": "Current Balance",
         "Brad": 0,
         "Carson": 0,
         "Sean": 0
       }
-    }
+    ]
   })
   
   const round=(n)=>{
@@ -129,11 +156,9 @@ function Ledger(){
   }
   
   const splitCost =(e)=>{
-
     const split = e.target.value/3;
     let valuesDeepCopy = structuredClone(values);
     const index = valuesDeepCopy["recurringCosts"].findIndex((x)=> x.name===e.target.id)
-    
     valuesDeepCopy["recurringCosts"][index]["total"] = round(e.target.value);
     for(let x = 0; x < members.length; x++){
       valuesDeepCopy["recurringCosts"][index][members[x]] = round(split);
@@ -177,7 +202,7 @@ function Ledger(){
       for(let y = 0; y < costObj["recurringCosts"].length-1; y++){
         totalCosts = totalCosts + valuesDeepCopy["recurringCosts"][y][members[x]]
       }
-      valuesDeepCopy["Balances"]["ADD: Total Costs"][members[x]] = round(totalCosts);
+      valuesDeepCopy["Balances"][2][members[x]] = round(totalCosts);
       totalCosts = 0
     }
     setValues(valuesDeepCopy)
@@ -218,6 +243,27 @@ function Ledger(){
     setVisibilityState("visible")
   }
 
+  const renderPmt=(e)=>{
+    console.log(values)
+    setValues((val)=>{
+      let index = val["paymentsMade"].findIndex((x)=>x.name===e.target.id)
+      return {
+        ...val,
+        paymentsMade: val["paymentsMade"].map((item, i)=>{
+          if(i===index){
+            return {
+              ...item,
+              "amt": e.target.value
+            };
+          } else {
+              return item;
+          }
+        })
+      }
+    })
+    console.log(values)
+  }
+
   return (
     <div id="ledger">
       <AddDialogue visibilityState={visibilityState} setVisibilityState={setVisibilityState} addCost={addCost}/>
@@ -254,42 +300,42 @@ function Ledger(){
       <div id="otherCosts" className="ledgerSection">
         <span className="sectionHeader">Other Costs</span>
         <div className="sectionTable">
-          <span>netflix</span>
-          <span>$30.00</span>
-          <span>8/20/2024</span>
-          <span id="other1" className="amount">$10.00</span>
-          <span id="other1" className="amount">$10.00</span>
-          <span id="other1" className="amount">$10.00</span>
-          <span className="totals">Total</span>
-          <span>$30.00</span>
-          <span></span>
-          <span id="otherTotal" className="amount totals">$10.00</span>
-          <span id="otherTotal" className="amount totals">$10.00</span>
-          <span id="otherTotal" className="amount totals">$10.00</span>
+          {values["otherCosts"].map((cost, index)=>{
+            return (
+              <div key={index} className="costRow">
+                <span>{cost.name}</span>
+                {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput" type="text" placeholder="0.00"/> : <span></span>}
+                <span>{cost.date}</span>
+                {members.map((member, index)=>{
+                  return (
+                    <span key={index}>${cost[member]}</span>
+                  )
+                })}
+              </div>
+            )
+          })}
           <button>+</button>
         </div>
       </div>
       <div id="payments" className="ledgerSection">
         <span className="sectionHeader">Payments Made</span>
         <div className="sectionTable">
-          <span>Brad</span>
-          <span>$50.00</span>
-          <span>8/18/2024</span>
-          <span>$50.00</span>
-          <span>-</span>
-          <span>-</span>
-          <span>Carson</span>
-          <span>$40.00</span>
-          <span>8/19/2024</span>
-          <span>-</span>
-          <span>$40.00</span>
-          <span>-</span>
-          <span>Sean</span>
-          <span>$80.00</span>
-          <span>8/20/2024</span>
-          <span>-</span>
-          <span>-</span>
-          <span>$80.00</span>
+          {values["paymentsMade"].map((pmt, index)=>{
+            return (
+              <div key={index} className="costRow">
+                <span>{pmt.name}</span>
+                <input onChange={renderPmt} id={pmt.name} className="amtInput" type="text" placeholder="0.00"/>
+                <span>{pmt.date}</span>
+                {members.map((member, index)=>{
+                  return (
+                    <span>
+                      { pmt.name===member ? "$"+pmt.amt : "" }
+                    </span>
+                  )
+                })}
+              </div>
+            )
+          })}
           <button>+</button>
         </div>
       </div>
@@ -311,9 +357,9 @@ function Ledger(){
           <span>ADD: Total Costs</span>
           <span></span>
           <span></span>
-          <span>{values["Balances"]["ADD: Total Costs"]["Brad"]}</span>
-          <span>{values["Balances"]["ADD: Total Costs"]["Carson"]}</span>
-          <span>{values["Balances"]["ADD: Total Costs"]["Sean"]}</span>
+          <span>{values["Balances"][2]["Brad"]}</span>
+          <span>{values["Balances"][2]["Carson"]}</span>
+          <span>{values["Balances"][2]["Sean"]}</span>
           <span>Current Balance:</span>
           <span></span>
           <span></span>
