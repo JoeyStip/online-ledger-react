@@ -16,20 +16,27 @@ function Members(){
   );
 };
 
-function AddDialogue({visibilityState, setVisibilityState ,addCost}){
+function AddDialogue({visibilityState, setVisibilityState ,addCost, dialogueType, costs}){
 
   const handleSubmit=(e)=>{
     e.preventDefault();
     setVisibilityState("hidden");
     const costName = e.target[0].value;
     const costDate = e.target[1].value;
-    console.log(Date.now())
+    let regex = new RegExp(`${costName}`, "i")
+    if(costs[dialogueType].findIndex((i)=>regex.test(i))>-1){
+      alert("Cost Name already exists. Please choose a new one")
+      return
+    }
+
     addCost(costName, costDate)
   }
 
   return (
     <div id="addCostDialogue" style={{visibility: visibilityState}}>
-      <h1>Add Cost</h1>
+      <h1>
+        {dialogueType==="recurring" ? "Add Recurring Cost" : "Add Other Cost"}
+      </h1>
       <form id="inputWrapper" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="costName">Cost Name:
@@ -49,11 +56,12 @@ function AddDialogue({visibilityState, setVisibilityState ,addCost}){
 
 function Ledger(){
 
+  const [dialogueType, setDialogueType] = useState("");
   const [visibilityState, setVisibilityState] = useState("hidden");
   const [members, setMembers] = useState(["Brad", "Carson", "Sean"]);
   const [costs, setCosts] = useState({
     "recurringCosts": ["water/sewer", "electric", "natural gas"],
-    "OtherCosts": ["Netflix"]
+    "otherCosts": ["Netflix"]
   })
   const [values, setValues] = useState({
     "recurringCosts": [
@@ -158,49 +166,52 @@ function Ledger(){
   const splitCost =(e)=>{
     const split = e.target.value/3;
     let valuesDeepCopy = structuredClone(values);
-    const index = valuesDeepCopy["recurringCosts"].findIndex((x)=> x.name===e.target.id)
-    valuesDeepCopy["recurringCosts"][index]["total"] = round(e.target.value);
+    let costType = e.target.classList[1]
+    const index = valuesDeepCopy[costType].findIndex((x)=> x.name===e.target.id)
+    valuesDeepCopy[costType][index]["total"] = round(e.target.value);
     for(let x = 0; x < members.length; x++){
-      valuesDeepCopy["recurringCosts"][index][members[x]] = round(split);
+      valuesDeepCopy[costType][index][members[x]] = round(split);
     };
-    updateTotals(valuesDeepCopy)
+    updateTotals(valuesDeepCopy, null, costType)
   };
 
-  const updateTotals =(valuesDeepCopy, costDeepCopy)=>{
-    //console.log(valuesDeepCopy, costs, members);
+  const updateTotals =(valuesDeepCopy, costDeepCopy, costType)=>{
     let costObj = {};
     if(costDeepCopy){
       costObj = costDeepCopy
     } else {
       costObj = costs;
     }
-    const totalsIndex = costObj["recurringCosts"].length;
+    const totalsIndex = costObj[costType].length;
     // per member vertical total for recurring
     let total = 0;
     for(let x = 0; x < members.length; x++){
-      for(let i = 0; i < costObj["recurringCosts"].length; i++){
-        total = total + valuesDeepCopy["recurringCosts"][i][members[x]]
+      for(let i = 0; i < costObj[costType].length; i++){
+        total = total + valuesDeepCopy[costType][i][members[x]]
       }
-      valuesDeepCopy["recurringCosts"][totalsIndex][members[x]] = round(total);
+      valuesDeepCopy[costType][totalsIndex][members[x]] = round(total);
       total = 0;
     }
     //overall total
-    for(let y = 0; y < costObj["recurringCosts"].length-1; y++){
-      total = total + valuesDeepCopy["recurringCosts"][y]["total"]
+    for(let y = 0; y < costObj[costType].length; y++){
+      total = total + valuesDeepCopy[costType][y]["total"]
     }
     if(total>0){
-      valuesDeepCopy["recurringCosts"][totalsIndex]["total"] = round(total);
+      valuesDeepCopy[costType][totalsIndex]["total"] = round(total);
     } else {
-      valuesDeepCopy["recurringCosts"][totalsIndex]["total"] = 0.00;
+      valuesDeepCopy[costType][totalsIndex]["total"] = 0.00;
     }
-    updateBalances(valuesDeepCopy, costObj)
+    updateBalances(valuesDeepCopy, costObj, costType)
   }
 
-  const updateBalances =(valuesDeepCopy, costObj)=>{
+  const updateBalances =(valuesDeepCopy, costObj, costType)=>{
     for(let x = 0; x < members.length; x++){
       let totalCosts = 0
-      for(let y = 0; y < costObj["recurringCosts"].length-1; y++){
-        totalCosts = totalCosts + valuesDeepCopy["recurringCosts"][y][members[x]]
+      for(let i = 0; i<2; i++){
+        let costTypeArr = Object.getOwnPropertyNames(costs)
+        for(let y = 0; y < costObj[costTypeArr[i]].length; y++){
+          totalCosts = totalCosts + valuesDeepCopy[costTypeArr[i]][y][members[x]]
+        }
       }
       valuesDeepCopy["Balances"][2][members[x]] = round(totalCosts);
       totalCosts = 0
@@ -211,7 +222,7 @@ function Ledger(){
   const addCost =(costName, costDate)=>{
     let newCostName = costName;
     let costDeepCopy = structuredClone(costs);
-    costDeepCopy["recurringCosts"].push(newCostName);
+    costDeepCopy[dialogueType].push(newCostName);
     setCosts(costDeepCopy);
     let newValueObj = {
       "name": newCostName,
@@ -222,31 +233,45 @@ function Ledger(){
       newValueObj[members[x]] = 0.00;
     };
     let valuesDeepCopy = structuredClone(values);
-    let spliceIndex = valuesDeepCopy["recurringCosts"].length-1;
-    valuesDeepCopy["recurringCosts"].splice(spliceIndex, 0, newValueObj);
+    let spliceIndex = valuesDeepCopy[dialogueType].length-1;
+    valuesDeepCopy[dialogueType].splice(spliceIndex, 0, newValueObj);
     setValues(valuesDeepCopy);
   }
 
-  const removeCost =()=>{
+  const removeCost =(e)=>{
+    if(e.target.id==="recurringCostsAddButton" || e.target.id==="recurringCostsMinusButton"){
+      console.log("set Dialogue")
+      setDialogueType("recurringCosts")
+    } else {
+      console.log("set Dialogue")
+      setDialogueType("otherCosts")
+    };
+    console.log(e.target.id, costs[dialogueType], costs, dialogueType)
     let costDeepCopy = structuredClone(costs);
-    let spliceIndex = costs["recurringCosts"].length-1;
-    costDeepCopy["recurringCosts"].splice(spliceIndex, 1);
+    let spliceIndex = costs[dialogueType].length-1;
+    costDeepCopy[dialogueType].splice(spliceIndex, 1);
     setCosts(costDeepCopy);
-    console.log(`costDeepCopy:`, costDeepCopy, `costs:`, costs);
+    //console.log(`costDeepCopy:`, costDeepCopy, `costs:`, costs);
     let valuesDeepCopy = structuredClone(values);
-    spliceIndex = values["recurringCosts"].length-2;
-    valuesDeepCopy["recurringCosts"].splice(spliceIndex, 1);
-    updateTotals(valuesDeepCopy, costDeepCopy);
+    spliceIndex = values[dialogueType].length-2;
+    valuesDeepCopy[dialogueType].splice(spliceIndex, 1);
+    updateTotals(valuesDeepCopy, costDeepCopy, dialogueType);
   }
 
-  const showDialogue=()=>{
+  const showDialogue=(e)=>{
+    if(e.target.id==="recurringCostsAddButton"){
+      setDialogueType("recurringCosts")
+    } else {
+      setDialogueType("otherCosts")
+    }
     setVisibilityState("visible")
   }
 
   const renderPmt=(e)=>{
-    console.log(values)
+    //console.log(e.target.id)
     setValues((val)=>{
       let index = val["paymentsMade"].findIndex((x)=>x.name===e.target.id)
+      
       return {
         ...val,
         paymentsMade: val["paymentsMade"].map((item, i)=>{
@@ -258,15 +283,32 @@ function Ledger(){
           } else {
               return item;
           }
+        }),
+        Balances: val["Balances"].map((item, i)=>{
+          if(i===1){
+            //let x = e.taget.id
+            return {
+              ...val["Balances"][1],
+              "Brad" : e.target.value
+            }
+          } else {
+            return item
+          }
         })
       }
-    })
-    console.log(values)
+    }) 
   }
 
   return (
     <div id="ledger">
-      <AddDialogue visibilityState={visibilityState} setVisibilityState={setVisibilityState} addCost={addCost}/>
+      <AddDialogue 
+        visibilityState={visibilityState} 
+        setVisibilityState={setVisibilityState} 
+        addCost={addCost}
+        dialogueType={dialogueType}
+        setDialogueType={setDialogueType}
+        costs={costs}
+      />
       <div id="ledgerHeader" className="ledgerSection">
         <span id="MonthYear">August 2024</span>
         <span>Amount</span>
@@ -282,7 +324,7 @@ function Ledger(){
             return (
               <div key={index} className="costRow">
                 <span>{cost.name}</span>
-                {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput" type="text" placeholder="0.00"/> : <span></span>}
+                {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput recurringCosts" type="number" placeholder="0.00"/> : <span>{cost.total}</span>}
                 <span>{cost.date}</span>
                 {members.map((member, index)=>{
                   return (
@@ -292,8 +334,8 @@ function Ledger(){
               </div>
             )
           })}
-          <button onClick={showDialogue}>+</button>
-          <button onClick={removeCost}>-</button>
+          <button id="recurringCostsAddButton" onClick={showDialogue}>+</button>
+          <button id="recurringCostsMinusButton" onClick={removeCost}>-</button>
           <div></div>
         </div>
       </div>
@@ -304,7 +346,7 @@ function Ledger(){
             return (
               <div key={index} className="costRow">
                 <span>{cost.name}</span>
-                {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput" type="text" placeholder="0.00"/> : <span></span>}
+                {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput otherCosts" type="text" placeholder="0.00"/> : <span></span>}
                 <span>{cost.date}</span>
                 {members.map((member, index)=>{
                   return (
@@ -314,7 +356,7 @@ function Ledger(){
               </div>
             )
           })}
-          <button>+</button>
+          <button id="otherCostButton" onClick={showDialogue}>+</button>
         </div>
       </div>
       <div id="payments" className="ledgerSection">
@@ -336,36 +378,25 @@ function Ledger(){
               </div>
             )
           })}
-          <button>+</button>
+          <button id="otherCostsAddButton" onClick={showDialogue}>+</button>
+          <button id="otherCostsMinusButton" onClick={removeCost}>-</button>
         </div>
       </div>
       <div id="balances" className="ledgerSection">
         <span className="sectionHeader">Balances</span>
         <div className="sectionTable">
-          <span>Beg Bal</span>
-          <span></span>
-          <span></span>
-          <span>$34.59</span>
-          <span>$68.13</span>
-          <span>$35.74</span>
-          <span>LESS: Payments</span>
-          <span></span>
-          <span></span>
-          <span>$50.00</span>
-          <span>$40.00</span>
-          <span>$80.00</span>
-          <span>ADD: Total Costs</span>
-          <span></span>
-          <span></span>
-          <span>{values["Balances"][2]["Brad"]}</span>
-          <span>{values["Balances"][2]["Carson"]}</span>
-          <span>{values["Balances"][2]["Sean"]}</span>
-          <span>Current Balance:</span>
-          <span></span>
-          <span></span>
-          <span>$104.59</span>
-          <span>$148.13</span>
-          <span>$75.74</span>
+          {values["Balances"].map((bal, index)=>{
+            return(
+              <div key={index} className="costRow">
+                <span>{bal.name}</span>
+                <span></span>
+                <span></span>
+                {members.map((member)=>{
+                  return <span>{bal[member]}</span>
+                })}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
