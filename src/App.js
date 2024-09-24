@@ -1,7 +1,7 @@
 import './App.css';
 import { useState } from 'react';
 
-function Members({members, setMembers, values, setValues}){
+function Members({members, setMembers, values, setValues, splitCost, updateTotals, updateBalances, round}){
 
   const [editMode, setEditMode] = useState({"enabled": false, "target":""});
 
@@ -22,6 +22,7 @@ function Members({members, setMembers, values, setValues}){
   const addMember=()=>{
     setMembers([...members, "new"])
     adjustColumns();
+    
     setEditMode({"enabled": true, "target":"new"})
   }
   const editMember=(e)=>{
@@ -33,7 +34,8 @@ function Members({members, setMembers, values, setValues}){
     e.preventDefault();
     let oldVal = e.target[1].id
     let newVal = e.target[0].value
-    console.log("oldVal: ", oldVal, "newVal: ", newVal);
+    console.log("oldVal: "+ oldVal, "newVal: " + newVal);
+    // console.log(e.target)
     setMembers((state)=>{
       let index = 0
       if(editMode.target!=="new"){
@@ -49,10 +51,15 @@ function Members({members, setMembers, values, setValues}){
         }
       })
     })
-    console.log("members: " + members);
-    setValues(()=>{
-      let callback=(item)=>{
+    //console.log("members: " + members);
+    
+    let callback=(item)=>{
+      if(oldVal==="new"){
+        item[newVal] = 0;
+        return item;
+      } else {
         let obj = Object.entries(item).map((i)=>{
+          // console.log("i: " + i + " i[0]: " + i[0] + " i[1]: " + i[1])
           if(i[0]===oldVal){
             return [newVal, i[1]];
           } else {
@@ -61,25 +68,35 @@ function Members({members, setMembers, values, setValues}){
         });
         return Object.fromEntries(obj);  
       }
-      return ({
-        ...values,
-        "recurringCosts": values["recurringCosts"].map((item)=>callback(item)),
-        "otherCosts": values["otherCosts"].map((item)=>callback(item)),
-        "paymentsMades": values["paymentsMade"].map((item)=>{
-          if(item.name === oldVal){
-            return {
-              ...item,
-              "name": newVal
-            }
-          } else {
-            return item;
-          };
-        }),
-        "Balances": values["Balances"].map((item)=>callback(item))
+    }
 
-      })
-    })
-    console.log(values)
+    //let valuesDeepCopy = structuredClone(values)
+    //console.log(valuesDeepCopy)
+    let valuesCopy = {
+      ...values,
+      "recurringCosts": values["recurringCosts"].map((item)=>callback(item)),
+      "otherCosts": values["otherCosts"].map((item)=>callback(item)),
+      "paymentsMade": values["paymentsMade"].map((item)=>{
+        if(item.name === oldVal){
+          return {
+            ...item,
+            "name": newVal
+          }
+        } else {
+          return item;
+        };
+      }),
+      "Balances": values["Balances"].map((item)=>callback(item))
+    }
+    
+    // console.log(valuesCopy)
+    splitCost({
+      "target":{
+        "value": values["recurringCosts"][0]["total"],
+        "classList": [0, Object.getOwnPropertyNames(values)[0]],
+        "id":"water/sewer"
+      }
+    }, valuesCopy)
     setEditMode({"enabled": false, "target": ""})
   }
 
@@ -143,82 +160,11 @@ function AddDialogue({visibilityState, setVisibilityState ,addCost, dialogueType
   )
 }
 
-function Ledger({members, values, setValues}){
+function Ledger({members, values, setValues, splitCost, updateTotals, updateBalances, round, costs, setCosts}){
 
   const [dialogueType, setDialogueType] = useState("");
   const [visibilityState, setVisibilityState] = useState("hidden");
-  const [costs, setCosts] = useState({
-    "recurringCosts": ["water/sewer", "electric", "natural gas"],
-    "otherCosts": ["Netflix"]
-  })
   
-  
-  const round=(n)=>{
-    return Math.round(n*100)/100
-  }
-  
-  const splitCost =(e)=>{
-    console.log(members)
-    const divideBy = members.length;
-    const split = e.target.value/divideBy;
-    let valuesDeepCopy = structuredClone(values);
-    let costType = e.target.classList[1]
-    const index = valuesDeepCopy[costType].findIndex((x)=> x.name===e.target.id)
-    valuesDeepCopy[costType][index]["total"] = round(e.target.value);
-    for(let x = 0; x < members.length; x++){
-      valuesDeepCopy[costType][index][members[x]] = round(split);
-    };
-    updateTotals(valuesDeepCopy, null, costType)
-  };
-
-  const updateTotals =(valuesDeepCopy, costDeepCopy, costType)=>{
-    let costObj = {};
-    if(costDeepCopy){
-      costObj = costDeepCopy
-    } else {
-      costObj = costs;
-    }
-    const totalsIndex = costObj[costType].length;
-    // per member vertical total for recurring
-    let total = 0;
-    for(let x = 0; x < members.length; x++){
-      for(let i = 0; i < costObj[costType].length; i++){
-        total = total + valuesDeepCopy[costType][i][members[x]]
-      }
-      valuesDeepCopy[costType][totalsIndex][members[x]] = round(total);
-      total = 0;
-    }
-    //overall total
-    for(let y = 0; y < costObj[costType].length; y++){
-      total = total + valuesDeepCopy[costType][y]["total"]
-    }
-    if(total>0){
-      valuesDeepCopy[costType][totalsIndex]["total"] = round(total);
-    } else {
-      valuesDeepCopy[costType][totalsIndex]["total"] = 0.00;
-    }
-    updateBalances(valuesDeepCopy, costObj, costType)
-  }
-
-  const updateBalances =(valuesDeepCopy, costObj, costType)=>{
-    for(let x = 0; x < members.length; x++){
-      let totalCosts = 0
-      for(let i = 0; i<2; i++){
-        let costTypeArr = Object.getOwnPropertyNames(costs)
-        for(let y = 0; y < costObj[costTypeArr[i]].length; y++){
-          totalCosts = totalCosts + valuesDeepCopy[costTypeArr[i]][y][members[x]]
-        }
-      }
-      valuesDeepCopy["Balances"][2][members[x]] = round(totalCosts);
-      let beginBal = valuesDeepCopy["Balances"][0][members[x]]
-      let pmts = valuesDeepCopy["Balances"][1][members[x]]
-      let curBal = beginBal - pmts + totalCosts
-      //console.log(beginBal, pmts, curBal)
-      valuesDeepCopy["Balances"][3][members[x]] = round(curBal);
-      totalCosts = 0
-    }
-    setValues(valuesDeepCopy)
-  }
 
   const addCost =(costName, costDate)=>{
     let newCostName = costName;
@@ -241,13 +187,13 @@ function Ledger({members, values, setValues}){
 
   const removeCost =(e)=>{
     if(e.target.id==="recurringCostsAddButton" || e.target.id==="recurringCostsMinusButton"){
-      console.log("set Dialogue")
+      //console.log("set Dialogue")
       setDialogueType("recurringCosts")
     } else {
-      console.log("set Dialogue")
+      //console.log("set Dialogue")
       setDialogueType("otherCosts")
     };
-    console.log(e.target.id, costs[dialogueType], costs, dialogueType)
+    //console.log(e.target.id, costs[dialogueType], costs, dialogueType)
     let costDeepCopy = structuredClone(costs);
     let spliceIndex = costs[dialogueType].length-1;
     costDeepCopy[dialogueType].splice(spliceIndex, 1);
@@ -418,6 +364,10 @@ function Analysis(){
 
 function App() {
 
+  const [costs, setCosts] = useState({
+    "recurringCosts": ["water/sewer", "electric", "natural gas"],
+    "otherCosts": ["Netflix"]
+  })
   const [members, setMembers] = useState(["Brad", "Carson", "Sean"]);
   const [values, setValues] = useState({
     "recurringCosts": [
@@ -515,14 +465,106 @@ function App() {
     ]
   })
 
+  const round=(n)=>{
+    return Math.round(n*100)/100
+  }
+  
+  const splitCost =(e, passedDeepCopy)=>{
+    let valuesDeepCopy = ""
+    if(passedDeepCopy){
+      valuesDeepCopy = passedDeepCopy
+    } else {
+      valuesDeepCopy = structuredClone(values);
+    }
+    const divideBy = members.length;
+    const split = e.target.value/divideBy;
+    let costType = e.target.classList[1]
+    const index = valuesDeepCopy[costType].findIndex((x)=> x.name===e.target.id)
+    valuesDeepCopy[costType][index]["total"] = round(e.target.value);
+    for(let x = 0; x < members.length; x++){
+      valuesDeepCopy[costType][index][members[x]] = round(split);
+    };
+    //console.log(members)
+    updateTotals(valuesDeepCopy, null, costType)
+  };
+
+  const updateTotals =(valuesDeepCopy, costDeepCopy, costType)=>{
+    let costObj = {};
+    if(costDeepCopy){
+      costObj = costDeepCopy
+    } else {
+      costObj = costs;
+    }
+    const totalsIndex = costObj[costType].length;
+    // per member vertical total for recurring
+    let total = 0;
+    for(let x = 0; x < members.length; x++){
+      for(let i = 0; i < costObj[costType].length; i++){
+        total = total + valuesDeepCopy[costType][i][members[x]]
+      }
+      valuesDeepCopy[costType][totalsIndex][members[x]] = round(total);
+      total = 0;
+    }
+    //overall total
+    for(let y = 0; y < costObj[costType].length; y++){
+      total = total + valuesDeepCopy[costType][y]["total"]
+    }
+    if(total>0){
+      valuesDeepCopy[costType][totalsIndex]["total"] = round(total);
+    } else {
+      valuesDeepCopy[costType][totalsIndex]["total"] = 0.00;
+    }
+    updateBalances(valuesDeepCopy, costObj, costType)
+  }
+
+  const updateBalances =(valuesDeepCopy, costObj, costType)=>{
+    for(let x = 0; x < members.length; x++){
+      let totalCosts = 0
+      for(let i = 0; i<2; i++){
+        let costTypeArr = Object.getOwnPropertyNames(costs)
+        for(let y = 0; y < costObj[costTypeArr[i]].length; y++){
+          totalCosts = totalCosts + valuesDeepCopy[costTypeArr[i]][y][members[x]]
+        }
+      }
+      valuesDeepCopy["Balances"][2][members[x]] = round(totalCosts);
+      let beginBal = valuesDeepCopy["Balances"][0][members[x]]
+      let pmts = valuesDeepCopy["Balances"][1][members[x]]
+      let curBal = beginBal - pmts + totalCosts
+      //console.log(beginBal, pmts, curBal)
+      valuesDeepCopy["Balances"][3][members[x]] = round(curBal);
+      totalCosts = 0
+    }
+    setValues(valuesDeepCopy)
+    // console.log(valuesDeepCopy)
+  }
+
   return (
     <div className="App">
       <header>
             Online Ledger
       </header>
         <div id="container">
-            <Members members={members} setMembers={setMembers} values={values} setValues={setValues}/>
-            <Ledger members={members} values={values} setValues={setValues} />
+            <Members 
+              members={members} 
+              setMembers={setMembers} 
+              values={values} 
+              setValues={setValues}
+              splitCost={splitCost}
+              updateTotals={updateTotals}
+              updateBalances={updateBalances}
+              round={round}
+            />
+            <Ledger 
+              members={members} 
+              values={values} 
+              setValues={setValues}
+              splitCost={splitCost}
+              updateTotals={updateTotals}
+              updateBalances={updateBalances}
+              round={round}
+              costs={costs}
+              setCosts={setCosts}
+            />
             <Analysis />
         </div>
     </div>
