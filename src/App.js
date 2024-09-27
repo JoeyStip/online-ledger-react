@@ -5,24 +5,73 @@ function Members({members, setMembers, values, setValues, splitCost, updateTotal
 
   const [editMode, setEditMode] = useState({"enabled": false, "target":""});
 
+  const findChangedLines=(valuesCopy)=>{
+    let linesToChange = [];
+    for(let x = 0; x<valuesCopy["recurringCosts"].length; x++){
+      if(valuesCopy["recurringCosts"][x]["total"]>0){
+        linesToChange.push([valuesCopy["recurringCosts"][x]["name"], "recurringCosts"])
+      }
+    }
+    for(let x = 0; x<valuesCopy["otherCosts"].length; x++){
+      if(valuesCopy["otherCosts"][x]["total"]>0){
+        linesToChange.push([valuesCopy["otherCosts"][x]["name"], "otherCosts"])
+      }
+    }
+    // console.log(linesToChange);
+    return linesToChange;
+  }
+  const createMultiEvent=(linesToChangeArr, valuesCopy)=>{
+    let multiEvent = []
+    for(let x = 0; x<linesToChangeArr.length; x++){
+      multiEvent.push({
+        "target":{
+          "value": valuesCopy[linesToChangeArr[x][1]].find((costObj)=>costObj.name===linesToChangeArr[x][0])["total"],
+          "classList": [0, linesToChangeArr[x][1]],
+          "id": linesToChangeArr[x][0]
+        }
+      })
+    }
+    return multiEvent
+  }
+
   const removeMember=(e)=>{
     let member = e.target.className;
-    setMembers(members.filter((item)=>item!==member));
-    adjustColumns();
+    let membersDeepCopy = structuredClone(members)
+    membersDeepCopy = membersDeepCopy.filter((item)=>item!==member)
+    setMembers(membersDeepCopy);
+    adjustColumns(membersDeepCopy);
 
+    let callback = (obj) =>{
+      let entries = Object.entries(obj).filter((item)=>item[0]!==member)
+
+      return Object.fromEntries(entries);
+    }
+
+    let valuesDeepCopy = {
+      ...values, 
+      "recurringCosts": values["recurringCosts"].map((costObj)=>callback(costObj)),
+      "otherCosts": values["otherCosts"].map((costObj)=>callback(costObj)),
+      "paymentsMade": values["paymentsMade"].filter((pmt)=>pmt.name!==member),
+      "Balances": values["Balances"].map((bal)=>callback(bal))
+    }
+    console.log(valuesDeepCopy)
+    let linesToChangeArr = findChangedLines(valuesDeepCopy)
+    let multiEvent = createMultiEvent(linesToChangeArr, valuesDeepCopy)
+    splitCost(null, valuesDeepCopy, membersDeepCopy, multiEvent)
   }
-  const adjustColumns=()=>{
+  const adjustColumns=(passedMembers)=>{
     const stylesheet = document.styleSheets[0];
     let arr = [...stylesheet.cssRules];
     let found = arr.filter((r)=>r.selectorText === ".costRow"|| r.selectorText === "#ledger #ledgerHeader");
     for(let x=0; x<found.length; x++){
       found[x].style
-        .setProperty("grid-template-columns", "1.5fr repeat(" + (members.length + 3) + ", 1fr)");
+        .setProperty("grid-template-columns", "1.5fr repeat(" + (passedMembers.length + 2) + ", 1fr)");
     };
   }
   const addMember=()=>{
-    setMembers([...members, "new"]);
-    adjustColumns();
+    let newMembers = [...members, "new"]
+    setMembers(newMembers);
+    adjustColumns(newMembers);
     setValues({
       ...values,
       "paymentsMade":[
@@ -45,7 +94,7 @@ function Members({members, setMembers, values, setValues, splitCost, updateTotal
     e.preventDefault();
     let oldVal = e.target[1].id;
     let newVal = e.target[0].value;
-    console.log("oldVal: "+ oldVal, "newVal: " + newVal);
+    // console.log("oldVal: "+ oldVal, "newVal: " + newVal);
 
     let membersDeepCopy = structuredClone(members);
     let index = 0;
@@ -96,27 +145,11 @@ function Members({members, setMembers, values, setValues, splitCost, updateTotal
       "Balances": values["Balances"].map((item)=>callback(item))
     }
 
-    let linesToChange = [];
-    for(let x = 0; x<valuesCopy["recurringCosts"].length; x++){
-      if(valuesCopy["recurringCosts"][x]["total"]>0){
-        linesToChange.push(valuesCopy["recurringCosts"][x]["name"])
-      }
-    }
-    for(let x = 0; x<valuesCopy["otherCosts"].length; x++){
-      if(valuesCopy["otherCosts"][x]["total"]>0){
-        linesToChange.push(valuesCopy["otherCosts"][x]["name"])
-      }
-    }
-    console.log(linesToChange)
-    
+    let linesToChangeArr = findChangedLines(valuesCopy)
+    let multiEvent = createMultiEvent(linesToChangeArr, valuesCopy)
     // console.log(valuesCopy)
-    splitCost({
-      "target":{
-        "value": values["recurringCosts"][0]["total"],
-        "classList": [0, Object.getOwnPropertyNames(values)[0]],
-        "id":"water/sewer"
-      }
-    }, valuesCopy, mappedMembers)
+
+    splitCost(null, valuesCopy, mappedMembers, multiEvent)
     setEditMode({"enabled": false, "target": ""})
   }
 
@@ -489,7 +522,14 @@ function App() {
     return Math.round(n*100)/100
   }
   
-  const splitCost =(e, passedDeepCopy, membersCopy)=>{
+  const splitCost =(e, passedDeepCopy, membersCopy, multiEvent)=>{
+    let event = ""
+    if(e){
+      event = [e];
+
+    } else {
+      event = multiEvent;
+    }
     let valuesDeepCopy = ""
     if(passedDeepCopy){
       valuesDeepCopy = passedDeepCopy
@@ -502,19 +542,22 @@ function App() {
     } else {
       memberArray = members 
     }
-    const divideBy = members.length;
-    const split = e.target.value/divideBy;
-    let costType = e.target.classList[1]
-    const index = valuesDeepCopy[costType].findIndex((x)=> x.name===e.target.id)
-    valuesDeepCopy[costType][index]["total"] = round(e.target.value);
-    for(let x = 0; x < members.length; x++){
-      valuesDeepCopy[costType][index][memberArray[x]] = round(split);
-    };
+    const divideBy = memberArray.length;
+
+    for(let x = 0; x<event.length; x++){
+      const split = event[x].target.value/divideBy;
+      let costType = event[x].target.classList[1]
+      const index = valuesDeepCopy[costType].findIndex((y)=> y.name===event[x].target.id)
+      valuesDeepCopy[costType][index]["total"] = round(event[x].target.value);
+      for(let x = 0; x < memberArray.length; x++){
+        valuesDeepCopy[costType][index][memberArray[x]] = round(split);
+      };
+    }
     //console.log(members)
-    updateTotals(valuesDeepCopy, null, costType, memberArray)
+    updateTotals(valuesDeepCopy, null, memberArray)
   };
 
-  const updateTotals =(valuesDeepCopy, costDeepCopy, costType, membersCopy)=>{
+  const updateTotals =(valuesDeepCopy, costDeepCopy, membersCopy)=>{
     let costObj = {};
     if(costDeepCopy){
       costObj = costDeepCopy
@@ -527,29 +570,34 @@ function App() {
     } else {
       memberArray = members;
     }
-    const totalsIndex = costObj[costType].length;
-    // per member vertical total for recurring
-    let total = 0;
-    for(let x = 0; x < memberArray.length; x++){
-      for(let i = 0; i < costObj[costType].length; i++){
-        total = total + valuesDeepCopy[costType][i][memberArray[x]]
+
+    for(let x = 0; x<2; x++){
+      let costType = ["recurringCosts", "otherCosts"]
+      costType = costType[x]
+      const totalsIndex = costObj[costType].length;
+      // per member vertical total for recurring
+      let total = 0;
+      for(let x = 0; x < memberArray.length; x++){
+        for(let i = 0; i < costObj[costType].length; i++){
+          total = total + valuesDeepCopy[costType][i][memberArray[x]]
+        }
+        valuesDeepCopy[costType][totalsIndex][memberArray[x]] = round(total);
+        total = 0;
       }
-      valuesDeepCopy[costType][totalsIndex][memberArray[x]] = round(total);
-      total = 0;
+      //overall total
+      for(let y = 0; y < costObj[costType].length; y++){
+        total = total + valuesDeepCopy[costType][y]["total"]
+      }
+      if(total>0){
+        valuesDeepCopy[costType][totalsIndex]["total"] = round(total);
+      } else {
+        valuesDeepCopy[costType][totalsIndex]["total"] = 0.00;
+      }
     }
-    //overall total
-    for(let y = 0; y < costObj[costType].length; y++){
-      total = total + valuesDeepCopy[costType][y]["total"]
-    }
-    if(total>0){
-      valuesDeepCopy[costType][totalsIndex]["total"] = round(total);
-    } else {
-      valuesDeepCopy[costType][totalsIndex]["total"] = 0.00;
-    }
-    updateBalances(valuesDeepCopy, costObj, costType, memberArray)
+    updateBalances(valuesDeepCopy, costObj, memberArray)
   }
 
-  const updateBalances =(valuesDeepCopy, costObj, costType, membersCopy)=>{
+  const updateBalances =(valuesDeepCopy, costObj, membersCopy)=>{
     let membersArray = []
     if(membersCopy){
       membersArray = membersCopy;
