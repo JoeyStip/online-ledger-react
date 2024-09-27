@@ -23,7 +23,17 @@ function Members({members, setMembers, values, setValues, splitCost, updateTotal
   const addMember=()=>{
     setMembers([...members, "new"]);
     adjustColumns();
-    
+    setValues({
+      ...values,
+      "paymentsMade":[
+        ...values["paymentsMade"],
+        {
+          "name":"new",
+          "date":"01/01/2024",
+          "amt":0
+        }
+      ]
+    })
     setEditMode({"enabled": true, "target":"new"});
   }
   const editMember=(e)=>{
@@ -85,6 +95,19 @@ function Members({members, setMembers, values, setValues, splitCost, updateTotal
       }),
       "Balances": values["Balances"].map((item)=>callback(item))
     }
+
+    let linesToChange = [];
+    for(let x = 0; x<valuesCopy["recurringCosts"].length; x++){
+      if(valuesCopy["recurringCosts"][x]["total"]>0){
+        linesToChange.push(valuesCopy["recurringCosts"][x]["name"])
+      }
+    }
+    for(let x = 0; x<valuesCopy["otherCosts"].length; x++){
+      if(valuesCopy["otherCosts"][x]["total"]>0){
+        linesToChange.push(valuesCopy["otherCosts"][x]["name"])
+      }
+    }
+    console.log(linesToChange)
     
     // console.log(valuesCopy)
     splitCost({
