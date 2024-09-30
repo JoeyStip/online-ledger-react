@@ -111,17 +111,14 @@ body {
   font-weight: 800;
 }
 
-.sectionTable span {
-  border-top: 1px black solid;
-}
-
 .costRow {
   display: grid;
   grid-template-columns: 1.5fr repeat(5, 1fr);
   gap: 2px;
+  border-top: 1px black solid;
 }
 .costRow span {
-  padding: 1px;
+  padding: 3px;
 }
 
 .amtInput {

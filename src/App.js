@@ -194,11 +194,17 @@ function AddDialogue({visibilityState, setVisibilityState ,addCost, dialogueType
   return (
     <div id="addCostDialogue" style={{visibility: visibilityState}}>
       <h1>
-        {dialogueType==="recurring" ? "Add Recurring Cost" : "Add Other Cost"}
+        {
+        dialogueType==="recurring" ? 
+        "Add Recurring Cost" : 
+        dialogueType==="other" ?
+        "Add Other Cost":
+        "Add Payment"
+        }
       </h1>
       <form id="inputWrapper" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="costName">Cost Name:
+          <label htmlFor="costName">Name:
             <input type="text" id="costName" />
           </label>
         </div>
@@ -222,10 +228,10 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
   const addCost =(costName, costDate)=>{
     let newCostName = costName;
     let costDeepCopy = structuredClone(costs);
-    costDeepCopy[dialogueType].push(newCostName);
+    costDeepCopy[dialogueType].push(costName);
     setCosts(costDeepCopy);
     let newValueObj = {
-      "name": newCostName,
+      "name": costName,
       "date": costDate,
       "total": 0.00
     };
@@ -259,10 +265,18 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
   }
 
   const showDialogue=(e)=>{
-    if(e.target.id==="recurringCostsAddButton"){
-      setDialogueType("recurringCosts")
-    } else {
-      setDialogueType("otherCosts")
+    switch(e.target.id){
+      case "recurringCostsAddButton":
+        setDialogueType("recurringCosts")
+        break;
+      case "otherCostButton":
+        setDialogueType("otherCosts")
+        break;
+      case "paymentsAddButton":
+        setDialogueType("payments")
+        break;
+      default:
+        break;
     }
     setVisibilityState("visible")
   }
@@ -320,7 +334,12 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
           {values["recurringCosts"].map((cost, index)=>{
             return (
               <div key={index} className="costRow">
-                <span>{cost.name}</span>
+                {cost.name !== "totals"? 
+                <div>
+                  <button id="deleteCost">-</button>
+                  <input placeholder={cost.name} type="text"/>
+                </div> :
+                <div>totals</div>}
                 {cost.name!=="totals" ? 
                   <input 
                     onChange={splitCost} 
@@ -329,7 +348,7 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
                     type="number" 
                     placeholder="0.00"/> : 
                   <span>{cost.total}</span>}
-                <span>{cost.date}</span>
+                {cost.name !== "totals"? <input placeholder={cost.date} type="date"/> : <span></span>}
                 {members.map((member, index)=>{
                   return (
                     <span key={index}>${cost[member]}</span>
@@ -339,7 +358,7 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
             )
           })}
           <button id="recurringCostsAddButton" onClick={showDialogue}>+</button>
-          <button id="recurringCostsMinusButton" onClick={removeCost}>-</button>
+          {/* <button id="recurringCostsMinusButton" onClick={removeCost}>Edit</button> */}
           <div></div>
         </div>
       </div>
@@ -349,9 +368,14 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
           {values["otherCosts"].map((cost, index)=>{
             return (
               <div key={index} className="costRow">
-                <span>{cost.name}</span>
+                {cost.name !== "totals"? 
+                <div>
+                  <button id="deleteCost">-</button>
+                  <input placeholder={cost.name} type="text"/>
+                </div> :
+                <div>totals</div>}
                 {cost.name!=="totals" ? <input onChange={splitCost} id={cost.name} className="amtInput otherCosts" type="text" placeholder="0.00"/> : <span></span>}
-                <span>{cost.date}</span>
+                {cost.name !== "totals"? <input placeholder={cost.date} type="date"/> : <span></span>}
                 {members.map((member, index)=>{
                   return (
                     <span key={index}>${cost[member]}</span>
@@ -369,9 +393,14 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
           {values["paymentsMade"].map((pmt, index)=>{
             return (
               <div key={index} className="costRow">
-                <span>{pmt.name}</span>
+                {pmt.name !== "totals"? 
+                <div>
+                  <button id="deleteCost">-</button>
+                  <input placeholder={pmt.name} type="text"/>
+                </div> :
+                <div>totals</div>}
                 <input onChange={renderPmt} id={pmt.name} className="amtInput" type="text" placeholder="0.00"/>
-                <span>{pmt.date}</span>
+                <input placeholder={pmt.date} type="date"/>
                 {members.map((member, index)=>{
                   return (
                     <span key={index}>
@@ -382,8 +411,8 @@ function Ledger({members, values, setValues, splitCost, updateTotals, updateBala
               </div>
             )
           })}
-          <button id="otherCostsAddButton" onClick={showDialogue}>+</button>
-          <button id="otherCostsMinusButton" onClick={removeCost}>-</button>
+          <button id="paymentsAddButton" onClick={showDialogue}>+</button>
+          {/* <button id="otherCostsMinusButton" onClick={removeCost}>Edit</button> */}
         </div>
       </div>
       <div id="balances" className="ledgerSection">
