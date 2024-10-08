@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/online-ledger-react/static/css/main.1b5a9afb.css",
+    "main.js": "/online-ledger-react/static/js/main.8e3d64f4.js",
+    "static/js/453.bf6396d6.chunk.js": "/online-ledger-react/static/js/453.bf6396d6.chunk.js",
+    "index.html": "/online-ledger-react/index.html",
+    "main.1b5a9afb.css.map": "/online-ledger-react/static/css/main.1b5a9afb.css.map",
+    "main.8e3d64f4.js.map": "/online-ledger-react/static/js/main.8e3d64f4.js.map",
+    "453.bf6396d6.chunk.js.map": "/online-ledger-react/static/js/453.bf6396d6.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1b5a9afb.css",
+    "static/js/main.8e3d64f4.js"
+  ]
+}
